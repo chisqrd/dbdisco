@@ -184,43 +184,73 @@
                             }
                         ]
                     }
-                // },
-                // {
-                //     "Id": "NotableQueriesBuilderBlade",
-                //     "Type": "Blade",
-                //     "Version": 0,
-                //     "Configuration": {
-                //         "General": {
-                //             "title": "Discovery Queries",
-                //             "newGroup": false,
-                //             "preselectedFilters": "Type",
-                //             "renderMode": "grid"
-                //         },
-                //         "queries": [
-                //             {
-                //                 "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by ServerName_CF,ServerInstanceName_CF,DatabaseName_CF",
-                //                 "displayName": "Database Discovery Summary"
-                //             },
-                //             {
-                //                 "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by ServerInstanceName_CF",
-                //                 "displayName": "Database Count By Server"
-                //             },
-                //             {
-                //                 "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(ServerInstanceName_CF) by ServerName_CF",
-                //                 "displayName": "Database Instances By Server"
-                //             },
-                //             {
-                //                 "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by CompatLevel_CF",
-                //                 "displayName": "Database Instances By Compatibility Level"
-                //             },
-                //             {
-                //                 "query": "(Type=ServiceMapProcess_CL and InternalName_s=\"SQLSERVR\")",
-                //                 "displayName": "Database Servers Discovered By Service Map"
-                //             }
-                //         ]
-                //     }
+                },
+                {
+                    "Id": "NotableQueriesBuilderBlade",
+                    "Type": "Blade",
+                    "Version": 0,
+                    "Configuration": {
+                        "General": {
+                            "title": "Discovery Queries",
+                            "newGroup": false,
+                            "preselectedFilters": "Type",
+                            "renderMode": "grid"
+                        },
+                        "queries": [
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by ServerName_CF,ServerInstanceName_CF,DatabaseName_CF",
+                                "displayName": "Database Discovery Summary"
+                            },
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by ServerInstanceName_CF",
+                                "displayName": "Database Count By Server"
+                            },
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(ServerInstanceName_CF) by ServerName_CF",
+                                "displayName": "Database Instances By Server"
+                            },
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by CompatLevel_CF",
+                                "displayName": "Database Instances By Compatibility Level"
+                            },
+                            {
+                                "query": "(Type=ServiceMapProcess_CL and InternalName_s=\"SQLSERVR\")",
+                                "displayName": "Database Servers Discovered By Service Map"
+                            }
+                        ]
+                    }
                 }
-            ]
+            ],
+            "OverviewTile": {
+                "Id": "SingleQueryDonutBuilderTileV1",
+                "Type": "OverviewTile",
+                "Version": 0,
+                "Configuration": {
+                    "Donut": {
+                        "Query": "Category=JobLogs  | measure count() by RunbookName_s",
+                        "CenterLegend": {
+                            "Text": "Total",
+                            "Operation": "Sum",
+                            "ArcsToSelect": []
+                        },
+                        "Options": {
+                            "colors": [
+                                "#00188f",
+                                "#0072c6",
+                                "#00bcf2"
+                            ],
+                            "valueColorMapping": []
+                        }
+                    },
+                    "Advanced": {
+                        "DataFlowVerification": {
+                            "Enabled": false,
+                            "Query": "*",
+                            "Message": ""
+                        }
+                    }
+                }
+            }
         }
       },              
       {
