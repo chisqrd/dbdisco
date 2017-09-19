@@ -1,0 +1,393 @@
+{
+  "$schema": "http://schemas.microsoft.org/azure/deploymentTemplate?api-version=2015-01-01-preview#",
+  "contentVersion": "1.0",
+  "parameters": {
+      "automationAccountName": {
+          "type": "string",
+          "defaultValue":"DiscoveryAutomation",
+          "metadata": {
+              "description": "The name of the Azure Automation account to deploy to."
+          }
+      },
+      "credentialName": {
+          "type": "string",
+          "defaultValue": "DefaultAzureCredential",
+          "metadata": {
+              "description": "DefaultAzureCredential is the name of the Automation credential used in this runbook. This credential allows you to authenticate to Azure. "
+          }
+      },
+      "userName": {
+          "type": "string",
+          "metadata": {
+              "description": "The username for the Azure Automation credential."
+          }
+      },
+      "password": {
+          "type": "securestring",
+          "metadata": {
+              "description": "The password for the Azure Automation credential."
+          }
+      },
+      "jobId": {
+          "type": "string",
+          "defaultValue":"eec91024-e452-421a-aa09-92471c0ffe63",
+          "metadata": {
+              "description": "The GUID for the runbook job to be started."
+          }
+      },
+      "workspaceName":{
+          "type":"string",
+          "defaultValue":"DiscoveryWorkspace",
+          "metadata":{
+            "description":"The default name of the container of log analytics account to save discovery output"
+          }
+      }
+  },
+  "variables": {
+      "linkerRunbookName":"Linker",
+      "linkerScriptUri":"https://raw.githubusercontent.com/chisqrd/dbd/master/Runbooks/Linker.ps1",
+      "linkerRunbookDescription":"Forwards output of the runbooks into your workspace",
+      "runbookName": "SqlServerDiscovery",
+      "scriptUri": "https://raw.githubusercontent.com/chisqrd/dbd/master/Runbooks/SqlServerDiscovery.ps1",
+      "runbookDescription": "Authenticates to Azure and gets sql server instances and the databases contained",
+      "sku": "Free",
+      "wsApiVersion":"2017-04-26-preview",
+      "atmnApiVersion":"2017-05-15-preview",
+      "sltnApiVersion":"2015-11-01-preview",
+      "aaApiVersion": "2015-10-31",      
+      "AzureAutomation": {
+        "Name": "[Concat('AzureAutomation', '(', parameters('workspaceName'), ')')]",
+        "GalleryName": "AzureAutomation"
+      },
+      "psModules": {
+        "AzureRmProfile": {
+            "Name": "AzureRM.Profile",
+            "URL": "https://devopsgallerystorage.blob.core.windows.net/packages/azurerm.profile.3.3.1.nupkg"
+        },
+        "AzureRmInsights": {
+            "Name": "AzureRM.Insights",
+            "URL": "https://devopsgallerystorage.blob.core.windows.net/packages/azurerm.insights.3.3.1.nupkg"
+        },
+        "AzureRmOperationalInsights": {
+            "Name": "AzureRM.OperationalInsights",
+            "URL": "https://devopsgallerystorage.blob.core.windows.net/packages/azurerm.operationalinsights.3.3.1.nupkg"
+        }
+      },
+      "omsSolutions": {
+        "customSolution": {
+            "name": "Database Discovery",
+            "solutionName": "[concat('DatabaseDiscovery', '[', parameters('workspaceName'), ']')]",
+            "publisher": "tbd",
+            "displayName": "Database Discovery Solution",
+            "description": "This is a pre-built solution for Microsoft OMS (www.microsoft.com/oms) for deeper database metadata discovery.",
+            "author": "tbd"
+        }
+      },
+      "SqlAssessmentSolution": {
+        "Name": "[Concat('SQLAssessment', '(', parameters('workspaceName'), ')')]",
+        "GalleryName": "SQLAssessment"
+      },
+      "ServiceMapSolution": {
+        "Name": "[Concat('ServiceMap', '(', parameters('workspaceName'), ')')]",
+        "GalleryName": "ServiceMap"
+      }        
+  },
+  "resources":[
+  {
+      "name":"[parameters('workspaceName')]",
+      "type":"Microsoft.OperationalInsights/workspaces",
+      "apiVersion":"[variables('wsApiVersion')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [ ],
+      "tags": { },
+      "properties": {
+        "sku": {
+          "name": "[variables('sku')]"
+        }
+      },
+      "resources":[
+      {   
+          "apiVersion": "[variables('sltnApiVersion')]",
+          "location": "[resourceGroup().location]",
+          "name": "[variables('SqlAssessmentSolution').Name]",
+          "type": "Microsoft.OperationsManagement/solutions",
+          "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.OperationsManagement/solutions/', variables('SqlAssessmentSolution').Name)]",
+          "dependsOn": [
+              "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+          ],
+          "properties": {
+              "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+          },
+          "plan": {
+              "name": "[variables('SqlAssessmentSolution').Name]",
+              "publisher": "Microsoft",
+              "product": "[Concat('OMSGallery/', variables('SqlAssessmentSolution').GalleryName)]",
+              "promotionCode": ""
+          }
+      }, 
+      {   
+        "apiVersion": "[variables('sltnApiVersion')]",
+        "location": "[resourceGroup().location]",
+        "name": "[variables('ServiceMapSolution').Name]",
+        "type": "Microsoft.OperationsManagement/solutions",
+        "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.OperationsManagement/solutions/', variables('ServiceMapSolution').Name)]",
+        "dependsOn": [
+            "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+        ],
+        "properties": {
+            "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+        },
+        "plan": {
+            "name": "[variables('ServiceMapSolution').Name]",
+            "publisher": "Microsoft",
+            "product": "[Concat('OMSGallery/', variables('ServiceMapSolution').GalleryName)]",
+            "promotionCode": ""
+        }
+      },        
+      {
+        "apiVersion": "2015-11-01-preview",
+        "name": "[variables('omsSolutions').customSolution.name]",
+        "type": "views",
+        "id": "[resourceId('Microsoft.OperationalInsights/workspaces/views/', parameters('workspaceName'), variables('omsSolutions').customSolution.name)]",
+        "dependson": [
+            "[Concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+        ],
+        "properties": {
+            "Name": "[variables('omsSolutions').customSolution.name]",
+            "DisplayName": "[variables('omsSolutions').customSolution.displayName]",
+            "Description": "[variables('omsSolutions').customSolution.description]",
+            "Author": "[variables('omsSolutions').customSolution.author]",
+            "Source": "Local",
+            "Dashboard": [
+                {
+                    "Id": "InformationBlade",
+                    "Type": "Blade",
+                    "Version": 0,
+                    "Configuration": {
+                        "General": {
+                            "Title": "Database Discovery",
+                            "NewGroup": false,
+                            "Color": "#0072c6"
+                        },
+                        "Header": {
+                            "Image": "data:image/png;base64,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",
+                            "Label": "Discover Your Databases",
+                            "Link": {
+                                "Label": "More info",
+                                "Url": "https://azure.microsoft.com/en-us/campaigns/database-migration/"
+                            }
+                        },
+                        "List": [
+                            {
+                                "Title": "Summary",
+                                "Content": "Database Discovery solution can work in tandem with Azure Migration Planning service or as standalone. You can use the output of the solution to work with Azure Database Migration Service."
+                            }
+                        ]
+                    }
+                },
+                {
+                    "Id": "NotableQueriesBuilderBlade",
+                    "Type": "Blade",
+                    "Version": 0,
+                    "Configuration": {
+                        "General": {
+                            "title": "Discovery Queries",
+                            "newGroup": false,
+                            "preselectedFilters": "Type",
+                            "renderMode": "grid"
+                        },
+                        "queries": [
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by ServerName_CF,ServerInstanceName_CF,DatabaseName_CF",
+                                "displayName": "Database Discovery Summary"
+                            },
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by ServerInstanceName_CF",
+                                "displayName": "Database Count By Server"
+                            },
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(ServerInstanceName_CF) by ServerName_CF",
+                                "displayName": "Database Instances By Server"
+                            },
+                            {
+                                "query": "(Type=AzureDiagnostics and StreamType_s=Output) | measure countdistinct(DatabaseName_CF) by CompatLevel_CF",
+                                "displayName": "Database Instances By Compatibility Level"
+                            },
+                            {
+                                "query": "(Type=ServiceMapProcess_CL and InternalName_s=\"SQLSERVR\")",
+                                "displayName": "Database Servers Discovered By Service Map"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+      },              
+      {
+          "name": "[parameters('automationAccountName')]",
+          "type": "Microsoft.Automation/automationAccounts",
+          "apiVersion": "[variables('atmnApiVersion')]",
+          "location": "eastus2",
+          "dependsOn": [ 
+            "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+          ],
+          "tags": { },
+          "properties": {
+            "sku": {
+              "name": "[variables('sku')]"
+            },
+            "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]"
+          }
+        ,
+        "resources":[
+          {
+            "name": "[variables('AzureAutomation').Name]",
+            "apiVersion": "[variables('sltnApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "type": "Microsoft.OperationsManagement/solutions",
+            "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.OperationsManagement/solutions/', variables('AzureAutomation').Name)]",
+            "dependsOn": [
+              "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]","[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+            ],
+            "properties": {
+              "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]",
+              "automationAccountId": "[resourceId('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+            },
+            "plan": {
+              "name": "[variables('AzureAutomation').Name]",
+              "publisher": "Microsoft",
+              "product": "[Concat('OMSGallery/', variables('AzureAutomation').GalleryName)]",
+              "promotionCode": ""
+            }
+          },    
+          {
+            "name": "[variables('linkerRunbookName')]",
+            "type": "runbooks",
+            "apiVersion": "[variables('atmnApiVersion')]",
+            "location": "eastus2",
+            "dependsOn": [
+              "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+            ],
+            "tags": { },
+            "properties": {
+              "runbookType": "Script",
+              "logProgress": "false",
+              "logVerbose": "false",
+              "description": "[variables('linkerRunbookDescription')]",
+              "publishContentLink": {
+                "uri": "[variables('linkerScriptUri')]",
+                "version": "1.0.0.0"
+              }
+            }
+          },                                                          
+          {
+            "name": "[variables('runbookName')]",
+            "type": "runbooks",
+            "apiVersion": "[variables('atmnApiVersion')]",
+            "location": "eastus2",
+            "dependsOn": [
+              "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+            ],
+            "tags": { },
+            "properties": {
+              "runbookType": "Script",
+              "logProgress": "false",
+              "logVerbose": "false",
+              "description": "[variables('runbookDescription')]",
+              "publishContentLink": {
+                "uri": "[variables('scriptUri')]",
+                "version": "1.0.0.0"
+              }
+            }
+          },
+          {
+            "name": "[parameters('credentialName')]",
+            "type": "credentials",
+            "apiVersion": "[variables('atmnApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+              "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+            ],
+            "tags": { },
+            "properties": {
+              "userName": "[parameters('userName')]",
+              "password": "[parameters('password')]"
+            }
+          },
+          {
+            "name": "[variables('psModules').AzureRmProfile.Name]",
+            "type": "modules",
+            "apiVersion": "[variables('aaApiVersion')]",
+            "tags": {},
+            "dependsOn": [
+                "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]"
+            ],
+            "properties": {
+                "contentLink": {
+                    "uri": "[variables('psModules').AzureRmProfile.URL]"
+                }
+            }
+        },
+        {
+            "name": "[variables('psModules').AzureRmOperationalInsights.Name]",
+            "type": "modules",
+            "apiVersion": "[variables('aaApiVersion')]",
+            "tags": {},
+            "dependsOn": [
+                "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]",
+                "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'), '/modules/', variables('psModules').AzureRmProfile.Name)]"
+            ],
+            "properties": {
+                "contentLink": {
+                    "uri": "[variables('psModules').AzureRMOperationalInsights.URL]"
+                }
+            }
+        },
+        {
+            "name": "[variables('psModules').AzureRmInsights.Name]",
+            "type": "modules",
+            "apiVersion": "[variables('aaApiVersion')]",
+            "tags": {},
+            "dependsOn": [
+                "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]",
+                "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'), '/modules/', variables('psModules').AzureRmProfile.Name)]"
+            ],
+            "properties": {
+                "contentLink": {
+                    "uri": "[variables('psModules').AzureRMInsights.URL]"
+                }
+            }                      
+          },          
+          {
+            "name": "[parameters('jobId')]",
+            "type": "jobs",
+            "apiVersion": "[variables('atmnApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+              "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'))]",
+              "[concat('Microsoft.Automation/automationAccounts/', parameters('automationAccountName'), '/runbooks/',variables('linkerRunbookName'))]"
+            ],
+            "tags": {
+              "key": "value"
+            },
+            "properties": {
+              "runbook": {
+                "name": "[variables('linkerRunbookName')]"
+              },
+              "parameters":{
+                "subscriptionId":"[subscription().subscriptionId]",
+                "resourceGroupName":"[resourceGroup().name]",
+                "principalName":"[parameters('userName')]",
+                "principalPassword":"[parameters('password')]",                
+                "workspaceId":"[resourceId('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]",
+                "automationAccountName":"[parameters('automationAccountName')]"
+              }
+            }
+          }
+        ]
+      }  
+      ]
+    }
+  ],
+  "outputs": {  }
+}
