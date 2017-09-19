@@ -45,10 +45,10 @@
   },
   "variables": {
       "linkerRunbookName":"Linker",
-      "linkerScriptUri":"https://raw.githubusercontent.com/chisqrd/dbd/master/Runbooks/Linker.ps1",
+      "linkerScriptUri":"https://raw.githubusercontent.com/chisqrd/dbdisco/master/Runbooks/Linker.ps1",
       "linkerRunbookDescription":"Forwards output of the runbooks into your workspace",
       "runbookName": "SqlServerDiscovery",
-      "scriptUri": "https://raw.githubusercontent.com/chisqrd/dbd/master/Runbooks/SqlServerDiscovery.ps1",
+      "scriptUri": "https://raw.githubusercontent.com/chisqrd/dbdisco/master/Runbooks/SqlServerDiscovery.ps1",
       "runbookDescription": "Authenticates to Azure and gets sql server instances and the databases contained",
       "sku": "Free",
       "wsApiVersion":"2017-04-26-preview",
