@@ -253,7 +253,7 @@
                                 | project serverName,serverInstanceName,instanceName,edition,productVersion,versionName,databaseName,state,compatibilityLevel,collationName,recoveryModel,isFulltextEnabled,isBrokerEnabled,isCdcEnabled,dataFileSizeMB,logFileSizeMB, TimeGenerated 
                                 | where serverInstanceName != "" 
                                 | where TimeGenerated > ago(30d)",
-                                "operation": "Last Sample",
+                                "operation": "LastSample",
                                 "HideGraph": false,
                                 "enableSparklines": true,
                                 "ColumnsTitle": {
