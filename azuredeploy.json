@@ -282,7 +282,7 @@
                                 },
                                 "NavigationQuery": "{selected item}"
                             }
-                        }
+                    }
                 }
             ],
             "OverviewTile": {
