@@ -247,12 +247,7 @@
                                 }
                             },
                             "List": {
-                                "Query": "AzureDiagnostics
-                                | search substring(ResultDescription ,0,10) == "ServerName"
-                                | parse ResultDescription with * "ServerName          :" serverName  "ServerInstanceName  :" serverInstanceName "Instance            :" instanceName "Edition             :" edition "ProductVersion      :" productVersion "VersionName         :" versionName "DatabaseName        :" databaseName "state               :" state "compatibility_level :" compatibilityLevel "collation_name      :" collationName "recovery_model_desc :" recoveryModel "is_fulltext_enabled :" isFulltextEnabled "is_broker_enabled   :" isBrokerEnabled  "is_cdc_enabled      :" isCdcEnabled "DataFileSizeMB      :" dataFileSizeMB "LogFileSizeMB       :" logFileSizeMB
-                                | project serverName,serverInstanceName,instanceName,edition,productVersion,versionName,databaseName,state,compatibilityLevel,collationName,recoveryModel,isFulltextEnabled,isBrokerEnabled,isCdcEnabled,dataFileSizeMB,logFileSizeMB, TimeGenerated 
-                                | where serverInstanceName != "" 
-                                | where TimeGenerated > ago(30d)",
+                                "Query": "AzureDiagnostics | search substring(ResultDescription ,0,10) == "ServerName" | parse ResultDescription with * "ServerName          :" serverName  "ServerInstanceName  :" serverInstanceName "Instance            :" instanceName "Edition             :" edition "ProductVersion      :" productVersion "VersionName         :" versionName "DatabaseName        :" databaseName "state               :" state "compatibility_level :" compatibilityLevel "collation_name      :" collationName "recovery_model_desc :" recoveryModel "is_fulltext_enabled :" isFulltextEnabled "is_broker_enabled   :" isBrokerEnabled  "is_cdc_enabled      :" isCdcEnabled "DataFileSizeMB      :" dataFileSizeMB "LogFileSizeMB       :" logFileSizeMB | project serverName,serverInstanceName,instanceName,edition,productVersion,versionName,databaseName,state,compatibilityLevel,collationName,recoveryModel,isFulltextEnabled,isBrokerEnabled,isCdcEnabled,dataFileSizeMB,logFileSizeMB, TimeGenerated | where serverInstanceName != "" | where TimeGenerated > ago(30d)",
                                 "operation": "Last Sample",
                                 "HideGraph": false,
                                 "enableSparklines": true,
