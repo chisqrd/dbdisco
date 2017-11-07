@@ -192,7 +192,7 @@
                     "Configuration": {
                         "General": {
                             "title": "Discovery Queries",
-                            "newGroup": false,
+                            "newGroup": true,
                             "preselectedFilters": "Type",
                             "renderMode": "grid"
                         },
@@ -218,7 +218,8 @@
                                 "displayName": "Database Servers Discovered By Service Map"
                             }
                         ]
-                    },
+                    }
+                },
                     {
                         "Id": "LineChartSparklineBuilderBlade",
                         "Type": "Blade",
@@ -282,7 +283,6 @@
                                 "NavigationQuery": "{selected item}"
                             }
                         }
-                    }                    
                 }
             ],
             "OverviewTile": {
